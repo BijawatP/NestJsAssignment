@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -8,6 +9,18 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 
+interface SignUpDto {
+  username: string;
+  password: string;
+  fname: string;
+  lname: string;
+  dob: string;
+  gender: string;
+  email: string;
+  role: string;
+}
+
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -16,19 +29,23 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async signUp(username: string, password: string) {
-    const user = await this.usersService.create(username, password);
-    // const payload = { username: user.username, sub: user._id.toString() };
-    // return {
-    //   user: {
-    //     username: user.username,
-    //     access_token: this.jwtService.sign(payload),
-    //   },
-    // };
+  async signUp(signUpDto:SignUpDto){
+		// Check if SignUpDto is empty
+		if (Object.keys(signUpDto).length === 0) {
+			throw new BadRequestException('Sign-up data cannot be empty');
+		}
+  	const {username,password,fname,lname,dob,gender,email,role} = signUpDto;
+    const user = await this.usersService.create(username, password,fname,
+      lname,
+      dob,
+      gender,
+      email,
+    	role);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.generateTokens(user);
+    const tokens = await this.generateTokens(user);
+		return {user, tokens}
   }
 
   async signIn(username: string, password: string) {
@@ -41,7 +58,7 @@ export class AuthService {
       const tokens = await this.generateTokens(user);
       await this.updateRefreshToken(user.id, tokens.refresh_token);
 
-      return tokens;
+      return {user,tokens};
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
@@ -65,7 +82,7 @@ export class AuthService {
 
   async generateTokens(user: any) {
     const userId = user._id.toString();
-    const payload = { username: user.username, sub: userId };
+    const payload = { username: user.username, sub: userId,email:user.email,role:user.role };
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
       expiresIn: '15m',
