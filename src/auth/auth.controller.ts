@@ -15,8 +15,8 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
-  signUp(@Body() signUpDto: { username: string; password: string }) {
-    return this.authService.signUp(signUpDto.username, signUpDto.password);
+  signUp(@Body() signUpDto: { username: string; password: string, fname:string, lname:string, email:string,dob:string,gender:string, role:string}) {
+    return this.authService.signUp(signUpDto);
   }
 
   @HttpCode(HttpStatus.OK)

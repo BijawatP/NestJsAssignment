@@ -14,7 +14,6 @@ import { RefreshTokenStrategy } from './refresh-token.strategy';
     PassportModule,
     JwtModule.registerAsync({
       useFactory: () => {
-        console.log('JWT_SECRET:', process.env.JWT_SECRET);
         return {
           secret: process.env.JWT_SECRET,
           signOptions: { expiresIn: '1h' },
